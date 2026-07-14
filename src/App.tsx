@@ -154,7 +154,7 @@ function Hero() {
               to="/diagnostic"
               className="inline-flex items-center justify-center gap-2 bg-accent text-stone px-8 py-4 font-mono font-bold tracking-wider uppercase hover:bg-paper transition-all duration-300 group"
             >
-              Request Diagnostic
+              Request Infrastructure Diagnostic
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
@@ -439,7 +439,7 @@ function Footer() {
         <div>
           <div className="font-bold text-paper mb-4">Governance</div>
           <ul className="space-y-2 text-[10px]">
-             <li><a href="/Marketing/Assets/Service_Agreement.pdf" target="_blank" className="hover:text-accent transition-colors flex items-center gap-1.5"><FileCode2 className="w-3 h-3" /> Service_Agreement.pdf</a></li>
+             <li><a href="/Marketing/Assets/Service_Agreement.pdf" target="_blank" className="hover:text-accent transition-colors flex items-center gap-1.5"><FileCode2 className="w-3 h-3" /> View Service Agreement</a></li>
              <li><Link to="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
           </ul>
         </div>
@@ -659,7 +659,7 @@ function ServiceDetail() {
                      to="/diagnostic"
                      className="w-full inline-block bg-accent py-3 font-mono font-bold text-xs uppercase tracking-wider text-stone hover:bg-paper transition-colors"
                    >
-                     Request Audit
+                     Request Diagnostic
                    </Link>
                 </div>
              </div>
@@ -937,6 +937,53 @@ function AboutPage() {
   );
 }
 
+function PrivacyPage() {
+  return (
+    <main className="pt-32 pb-24 relative min-h-screen bg-stone flex flex-col justify-center">
+      <div className="absolute inset-0 grid-bg opacity-50"></div>
+      <div className="max-w-3xl mx-auto px-6 relative z-10 w-full bg-surface p-8 md:p-12 system-border shadow-2xl">
+        <h1 className="text-3xl font-bold uppercase tracking-tight mb-8">Privacy Policy & Governance</h1>
+        
+        <div className="space-y-8 text-paper/80 leading-relaxed font-sans text-sm">
+          <section>
+            <h2 className="font-mono text-accent uppercase tracking-widest text-[10px] mb-2">01 // Data Collection</h2>
+            <p>
+              When you submit a diagnostic request, we collect the contact and infrastructure details you provide. This information is used exclusively to evaluate your systems and communicate regarding our services.
+            </p>
+          </section>
+          
+          <section>
+            <h2 className="font-mono text-accent uppercase tracking-widest text-[10px] mb-2">02 // Analytics & Attribution</h2>
+            <p>
+              We may capture anonymous performance metrics, referring URLs, and attribution parameters (UTM codes) to optimize our own infrastructure and acquisition channels.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-mono text-accent uppercase tracking-widest text-[10px] mb-2">03 // Third-Party Transmission</h2>
+            <p>
+              By proceeding to schedule a call, your provided name and email are securely passed via URL parameters to our calendar provider (Zcal) to streamline your booking experience. We do not sell your data.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-mono text-accent uppercase tracking-widest text-[10px] mb-2">04 // Non-Binding</h2>
+            <p>
+              Viewing, downloading, or reading the Service Agreement PDF does not constitute a legally binding contract. A contract is only established upon formal, mutually signed authorization.
+            </p>
+          </section>
+        </div>
+        
+        <div className="mt-12 pt-8 border-t border-paper/10 text-center">
+          <Link to="/" className="font-mono text-[10px] uppercase tracking-widest text-paper/40 hover:text-accent transition-colors">
+            &larr; Return to System
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function App() {
   return (
     <div className="min-h-screen bg-stone text-paper font-sans overflow-x-hidden selection:bg-accent selection:text-stone">
@@ -949,6 +996,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/process" element={<ProcessPage />} />
         <Route path="/diagnostic" element={<DiagnosticPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
       <Footer />
     </div>
