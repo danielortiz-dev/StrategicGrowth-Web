@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Lock } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { MicroIntakeSubmission } from '../types/diagnostic';
 
 export default function MicroIntakePage() {
@@ -68,125 +68,118 @@ export default function MicroIntakePage() {
   };
 
   return (
-    <main className="pt-32 pb-24 relative min-h-screen grid-bg bg-stone flex flex-col justify-center">
+    <main className="pt-28 pb-16 relative min-h-screen grid-bg bg-stone flex flex-col justify-center">
       <div className="absolute inset-0 bg-stone/90"></div>
       
-      <div className="max-w-xl mx-auto px-6 relative z-10 w-full">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 uppercase">Tell Me What’s Holding Your Growth Back</h1>
-          <p className="text-paper/60 text-base max-w-md mx-auto">
+      <div className="max-w-[800px] mx-auto px-6 relative z-10 w-full">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 uppercase">Tell Me What’s Holding Your Growth Back</h1>
+          <p className="text-paper/60 text-xs max-w-md mx-auto">
             Share the main challenge you want to solve, then choose a time for a short strategy call.
           </p>
         </div>
 
         <div className="system-border bg-surface p-1 shadow-2xl shadow-accent/5">
-          <div className="flex items-center gap-2 p-3 border-b border-paper/10 font-mono text-[10px] text-paper/40 uppercase tracking-widest bg-stone/50">
+          <div className="flex items-center gap-2 p-2 border-b border-paper/10 font-mono text-[9px] text-paper/40 uppercase tracking-widest bg-stone/50">
             <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+              <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
+              <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
+              <div className="w-2 h-2 rounded-full bg-green-500/50"></div>
             </div>
             <span className="ml-2 text-accent">Strategy Call Intake</span>
           </div>
           
-          <div className="p-8 bg-stone/20">
-            <div className="space-y-6">
+          <div className="p-6 bg-stone/20">
+            <div className="space-y-4">
               
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-[10px] uppercase text-paper/50 mb-2">Full Name *</label>
+                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Full Name *</label>
                   <input 
                     type="text"
                     value={formData.fullName}
                     onChange={(e) => updateForm('fullName', e.target.value)}
                     placeholder="Jane Doe"
-                    className="w-full bg-stone system-border p-4 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-sm"
+                    className="w-full bg-stone system-border p-3 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[10px] uppercase text-paper/50 mb-2">Business Email *</label>
+                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Email *</label>
                   <input 
                     type="email"
                     value={formData.email}
                     onChange={(e) => updateForm('email', e.target.value)}
                     placeholder="jane@company.com"
-                    className="w-full bg-stone system-border p-4 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-sm"
+                    className="w-full bg-stone system-border p-3 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-xs"
                   />
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-[10px] uppercase text-paper/50 mb-2">Business Name (Optional)</label>
+                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Name (Optional)</label>
                   <input 
                     type="text"
                     value={formData.businessName || ''}
                     onChange={(e) => updateForm('businessName', e.target.value)}
                     placeholder="Acme Corp"
-                    className="w-full bg-stone system-border p-4 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-sm"
+                    className="w-full bg-stone system-border p-3 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[10px] uppercase text-paper/50 mb-2">Website (Optional)</label>
+                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Website (Optional)</label>
                   <input 
                     type="url"
                     value={formData.websiteUrl || ''}
                     onChange={(e) => updateForm('websiteUrl', e.target.value)}
                     placeholder="https://company.com"
-                    className="w-full bg-stone system-border p-4 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-sm"
+                    className="w-full bg-stone system-border p-3 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-mono text-[10px] uppercase text-paper/50 mb-2">Main Growth Challenge *</label>
+                <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Main Growth Challenge *</label>
                 <textarea 
                   value={formData.mainGrowthChallenge}
                   onChange={(e) => updateForm('mainGrowthChallenge', e.target.value)}
                   placeholder="What is the biggest growth problem you want help solving?"
-                  rows={4}
-                  className="w-full bg-stone system-border p-4 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-sm resize-none"
+                  rows={3}
+                  className="w-full bg-stone system-border p-3 text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent font-sans text-xs resize-none"
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <button 
                   disabled={!isFormValid() || loading}
                   onClick={handleBooking}
-                  className="w-full bg-accent text-stone py-4 font-mono uppercase tracking-widest font-bold text-xs hover:bg-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                  className="w-full bg-accent text-stone py-3 font-mono uppercase tracking-widest font-bold text-xs hover:bg-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
                 >
                   <Terminal className="w-4 h-4" /> 
                   {loading ? 'Processing...' : 'See Available Times'}
                 </button>
               </div>
 
-              <div className="text-center mt-4">
-                <p className="text-[10px] font-sans text-paper/50 leading-relaxed max-w-sm mx-auto">
-                  By continuing, you agree that Strategic Growth may use the information provided to prepare for and follow up about your requested strategy call. Scheduling is handled through Zcal. No payment or service agreement is created.{' '}
-                  <Link to="/privacy" className="text-paper/70 hover:text-accent underline">View Privacy Policy</Link>.
-                </p>
-              </div>
-
-              <div className="text-center mt-6 border-t border-paper/10 pt-4">
-                <p className="text-xs text-paper/60 font-sans">
+              <div className="text-center pt-2 border-t border-paper/10">
+                <p className="text-[10px] text-paper/50 font-sans mb-2">
                   Want to give me more context first?
                 </p>
                 <Link
                   to="/diagnostic-prep"
-                  className="inline-block mt-2 text-accent hover:text-paper font-mono text-[10px] uppercase tracking-widest transition-colors"
+                  className="w-full inline-flex items-center justify-center bg-transparent system-border border-accent/40 hover:border-accent/80 text-accent py-3 font-mono uppercase tracking-widest font-bold text-[10px] hover:bg-accent/10 transition-colors focus:outline-none focus:ring-1 focus:ring-accent"
                 >
-                  Complete the optional 2-minute call preparation &rarr;
+                  Complete Optional 2-Minute Call Preparation
                 </Link>
               </div>
 
+              <div className="text-center pt-1">
+                <p className="text-[9px] font-sans text-paper/40 leading-relaxed max-w-md mx-auto">
+                  By continuing, you agree that Strategic Growth may use the information provided to prepare for and follow up about your requested strategy call. Scheduling is handled through Zcal. No payment or service agreement is created.{' '}
+                  <Link to="/privacy" className="text-paper/60 hover:text-accent underline">View Privacy Policy</Link>.
+                </p>
+              </div>
+
             </div>
-          </div>
-          
-          <div className="p-4 border-t border-paper/10 bg-stone/50 font-mono text-[10px] text-paper/30 uppercase tracking-widest flex items-center justify-between">
-            <span>Pre-Call Context // Action Required</span>
-            <span className="flex items-center gap-2">
-              <Lock className="w-3 h-3" /> Secure Protocol
-            </span>
           </div>
         </div>
       </div>
