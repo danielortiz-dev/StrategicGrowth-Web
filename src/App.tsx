@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
   Network, Database, Cpu, ChevronRight, Activity, Terminal, 
-  ShieldAlert, ArrowRight, CheckCircle2, Lock, Command, FileCode2, GitMerge, Search, LayoutTemplate, RefreshCw, BarChart, ChevronLeft, Menu, X
+  ShieldAlert, ArrowRight, CheckCircle2, Lock, Command, FileCode2, GitMerge, Search, LayoutTemplate, RefreshCw, BarChart, ChevronLeft, Menu, X, Phone
 } from 'lucide-react';
 import { servicesData } from './data';
 import DiagnosticPage from './components/DiagnosticPage';
+import MicroIntakePage from './components/MicroIntakePage';
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [phonePopoverOpen, setPhonePopoverOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -22,7 +24,17 @@ function Navbar() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setPhonePopoverOpen(false);
   }, [location]);
+
+  // Handle escape to close popover
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPhonePopoverOpen(false);
+    };
+    if (phonePopoverOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phonePopoverOpen]);
 
   return (
     <>
@@ -39,6 +51,16 @@ function Navbar() {
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
               System Online
             </div>
+
+            <button
+              onClick={() => setPhonePopoverOpen(!phonePopoverOpen)}
+              className="text-paper hover:text-accent transition-colors flex items-center gap-2"
+              aria-label="Call Strategic Growth"
+            >
+              <Phone className="w-4 h-4" />
+              <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-wider">Call</span>
+            </button>
+
             <Link 
               to="/services"
               className="font-mono text-xs uppercase tracking-wider px-2 hover:text-accent transition-colors hidden sm:block"
@@ -57,13 +79,13 @@ function Navbar() {
             >
               Process
             </Link>
-            <Link 
-              to="/diagnostic" 
+            <Link
+              to="/book"
               className="font-mono text-xs uppercase tracking-wider px-5 py-2.5 bg-paper text-stone hover:bg-accent transition-colors duration-300 font-semibold hidden sm:inline-block"
             >
-              Deploy System
+              Book a Strategy Call
             </Link>
-            <button 
+            <button
               className="sm:hidden text-paper hover:text-accent transition-colors z-50 relative"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -73,10 +95,42 @@ function Navbar() {
         </div>
       </nav>
 
+      <AnimatePresence>
+        {phonePopoverOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed top-24 right-6 sm:right-12 z-50 w-80 bg-surface system-border shadow-2xl p-6"
+          >
+            <button
+              onClick={() => setPhonePopoverOpen(false)}
+              className="absolute top-4 right-4 text-paper/40 hover:text-paper transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="font-bold text-sm uppercase tracking-wider mb-2 pr-6">Call or Leave a Message</h3>
+            <p className="text-paper/60 text-xs leading-relaxed mb-6 font-sans">
+              I may be in a client session. Leave your name, business, callback number, and the main issue you need help solving.
+            </p>
+            <a
+              href="tel:+13854607852"
+              className="w-full inline-flex items-center justify-center gap-2 bg-accent text-stone py-3 font-mono text-[10px] uppercase tracking-widest font-bold hover:bg-paper transition-colors"
+            >
+              <Phone className="w-3 h-3" /> Call Strategic Growth
+            </a>
+            <div className="text-center mt-3 font-mono text-[10px] text-paper/40">
+              (385) 460-7852
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -101,11 +155,11 @@ function Navbar() {
               >
                 Process
               </Link>
-              <Link 
-                to="/diagnostic" 
+              <Link
+                to="/book"
                 className="font-mono text-lg uppercase tracking-wider px-8 py-4 bg-paper text-stone hover:bg-accent transition-colors duration-300 font-bold mx-auto mt-4"
               >
-                Deploy System
+                Book a Strategy Call
               </Link>
             </div>
             <div className="mt-auto pt-8 border-t border-paper/10 flex items-center justify-center gap-2 font-mono text-[10px] uppercase text-paper/40 tracking-wider">
@@ -151,10 +205,10 @@ function Hero() {
           
           <div className="flex flex-col sm:flex-row gap-4 pt-4 mt-2">
             <Link 
-              to="/diagnostic"
+              to="/book"
               className="inline-flex items-center justify-center gap-2 bg-accent text-stone px-8 py-4 font-mono font-bold tracking-wider uppercase hover:bg-paper transition-all duration-300 group"
             >
-              Request Infrastructure Diagnostic
+              Book a Strategy Call
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
@@ -656,10 +710,10 @@ function ServiceDetail() {
                      Deploy this architectural component to your business infrastructure.
                    </p>
                    <Link 
-                     to="/diagnostic"
+                     to="/book"
                      className="w-full inline-block bg-accent py-3 font-mono font-bold text-xs uppercase tracking-wider text-stone hover:bg-paper transition-colors"
                    >
-                     Request Diagnostic
+                     Book a Strategy Call
                    </Link>
                 </div>
              </div>
@@ -776,10 +830,10 @@ function ProcessPage() {
             Ready to transition from fragmented effort to engineered systems?
           </p>
           <Link 
-            to="/diagnostic"
+            to="/book"
             className="inline-block bg-accent py-4 px-8 font-mono font-bold text-sm uppercase tracking-wider text-stone hover:bg-paper hover:scale-[1.02] active:scale-95 transition-all"
           >
-            Request Infrastructure Review
+            Book a Strategy Call
           </Link>
         </div>
       </div>
@@ -995,7 +1049,8 @@ export default function App() {
         <Route path="/services/:slug" element={<ServiceDetail />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/process" element={<ProcessPage />} />
-        <Route path="/diagnostic" element={<DiagnosticPage />} />
+        <Route path="/book" element={<MicroIntakePage />} />
+        <Route path="/diagnostic-prep" element={<DiagnosticPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
       <Footer />

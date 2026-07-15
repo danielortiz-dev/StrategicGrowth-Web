@@ -1,3 +1,23 @@
+export interface MicroIntakeSubmission {
+  schemaVersion: string;
+  submissionKey: string;
+  fullName: string;
+  email: string;
+  businessName?: string;
+  websiteUrl?: string;
+  mainGrowthChallenge: string;
+  clientStartedAt: string;
+  landingPath: string;
+  referrer: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  fbclid?: string;
+  gclid?: string;
+}
+
 export interface DiagnosticSubmission {
   schemaVersion: string;
   submissionKey: string;
