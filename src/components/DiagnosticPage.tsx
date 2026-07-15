@@ -127,9 +127,12 @@ export default function DiagnosticPage() {
       
       <div className="max-w-4xl mx-auto px-6 relative z-10 w-full">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 uppercase">Request Your Growth Infrastructure Diagnostic</h1>
-          <p className="text-paper/60 text-lg max-w-lg mx-auto">
-            Complete a free preliminary assessment of your acquisition, conversion, and operational infrastructure.
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 uppercase">Optional Call Preparation</h1>
+          <p className="text-paper/60 text-lg max-w-lg mx-auto mb-2">
+            Complete this short assessment if you would like to give me more context before our conversation.
+          </p>
+          <p className="text-accent font-mono text-[10px] uppercase tracking-widest max-w-md mx-auto">
+            You can book or attend your strategy call without completing this assessment.
           </p>
         </div>
 

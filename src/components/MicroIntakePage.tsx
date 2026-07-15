@@ -167,6 +167,18 @@ export default function MicroIntakePage() {
                 </p>
               </div>
 
+              <div className="text-center mt-6 border-t border-paper/10 pt-4">
+                <p className="text-xs text-paper/60 font-sans">
+                  Want to give me more context first?
+                </p>
+                <Link
+                  to="/diagnostic-prep"
+                  className="inline-block mt-2 text-accent hover:text-paper font-mono text-[10px] uppercase tracking-widest transition-colors"
+                >
+                  Complete the optional 2-minute call preparation &rarr;
+                </Link>
+              </div>
+
             </div>
           </div>
           

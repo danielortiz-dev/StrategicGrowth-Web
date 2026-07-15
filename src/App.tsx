@@ -8,6 +8,7 @@ import {
 import { servicesData } from './data';
 import DiagnosticPage from './components/DiagnosticPage';
 import MicroIntakePage from './components/MicroIntakePage';
+import BookingConfirmedPage from './components/BookingConfirmedPage';
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1052,6 +1053,7 @@ export default function App() {
         <Route path="/book" element={<MicroIntakePage />} />
         <Route path="/diagnostic-prep" element={<DiagnosticPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/booking-confirmed" element={<BookingConfirmedPage />} />
       </Routes>
       <Footer />
     </div>
