@@ -16,6 +16,7 @@ export interface MicroIntakeSubmission {
   utmContent?: string;
   fbclid?: string;
   gclid?: string;
+  honeypot?: string;
 }
 
 export interface DiagnosticSubmission {

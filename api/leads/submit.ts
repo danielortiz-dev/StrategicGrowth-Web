@@ -4,11 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 const schema = z.object({
   submissionId: z.string().uuid(),
-  fullName: z.string().trim().max(200),
+  fullName: z.string().trim().min(1).max(200),
   email: z.string().trim().toLowerCase().email().max(254),
   businessName: z.string().trim().max(200).optional().default(''),
   website: z.union([z.string().trim().url().max(500), z.string().trim().max(0)]).optional(),
-  mainChallenge: z.string().trim().max(2000),
+  mainChallenge: z.string().trim().min(1).max(2000),
   attribution: z.object({
     source: z.string().trim().max(100).optional(),
     medium: z.string().trim().max(100).optional(),
@@ -29,6 +29,10 @@ function normalizeSpreadsheetValue(value: string | undefined): string {
     return `'${trimmed}`;
   }
   return trimmed;
+}
+
+function getRange(tabName: string, range: string): string {
+  return `'${tabName.replace(/'/g, "''")}'!${range}`;
 }
 
 export default async function handler(req: any, res: any) {
@@ -54,7 +58,12 @@ export default async function handler(req: any, res: any) {
   }
 
   const contentLength = parseInt(req.headers['content-length'] || '0', 10);
-  if (contentLength > 10240 || (req.body && JSON.stringify(req.body).length > 10240)) {
+  if (isNaN(contentLength) || contentLength < 0 || contentLength > 10240) {
+     return res.status(413).json({ ok: false, error: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload too large or malformed Content-Length' } });
+  }
+
+  // Vercel parses the request before handler execution, but we still measure serialized bytes to be safe
+  if (req.body && Buffer.byteLength(JSON.stringify(req.body), 'utf8') > 10240) {
      return res.status(413).json({ ok: false, error: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload too large' } });
   }
 
@@ -62,7 +71,7 @@ export default async function handler(req: any, res: any) {
   try {
     parsed = schema.strict().parse(req.body);
   } catch (err: any) {
-    return res.status(400).json({ ok: false, error: { code: 'VALIDATION_FAILED', message: err.message } });
+    return res.status(400).json({ ok: false, error: { code: 'VALIDATION_FAILED', message: 'Validation failed. Please ensure all required fields are correctly formatted.' } });
   }
 
   if (parsed.honeypot && parsed.honeypot.length > 0) {
@@ -110,7 +119,7 @@ export default async function handler(req: any, res: any) {
       'Intake Status', 'Booking Status', 'Call Prep Status', 'Follow-Up Status'
     ];
 
-    const range = `'${tabName}'!A1:T`;
+    const range = getRange(tabName, 'A1:T');
     const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: range,
@@ -123,7 +132,7 @@ export default async function handler(req: any, res: any) {
       // Initialize headers
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `'${tabName}'!A1`,
+        range: getRange(tabName, 'A1'),
         valueInputOption: 'RAW',
         requestBody: { values: [expectedHeaders] }
       });
@@ -179,7 +188,7 @@ export default async function handler(req: any, res: any) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `'${tabName}'!A1`,
+      range: getRange(tabName, 'A1'),
       valueInputOption: 'RAW',
       requestBody: { values: [appendRow] }
     });

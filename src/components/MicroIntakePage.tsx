@@ -6,7 +6,7 @@ import { MicroIntakeSubmission } from '../types/diagnostic';
 export default function MicroIntakePage() {
   const [formData, setFormData] = useState<MicroIntakeSubmission>({
     schemaVersion: '1.0',
-    submissionKey: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+    submissionKey: sessionStorage.getItem('sg_active_submission_id') || crypto.randomUUID(),
     fullName: "",
     email: "",
     businessName: "",
@@ -21,13 +21,17 @@ export default function MicroIntakePage() {
     utmTerm: "",
     utmContent: "",
     fbclid: "",
-    gclid: ""
+    gclid: "",
+    honeypot: ""
   });
 
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!sessionStorage.getItem('sg_active_submission_id')) {
+      sessionStorage.setItem('sg_active_submission_id', formData.submissionKey);
+    }
     const params = new URLSearchParams(window.location.search);
     setFormData(prev => ({
       ...prev,
@@ -65,6 +69,7 @@ export default function MicroIntakePage() {
       website: formData.websiteUrl?.trim() || '',
       mainChallenge: formData.mainGrowthChallenge,
       formStartedAt: formData.clientStartedAt,
+      honeypot: formData.honeypot,
       attribution: {
         source: formData.utmSource,
         medium: formData.utmMedium,
@@ -86,9 +91,11 @@ export default function MicroIntakePage() {
 
       if (data.ok) {
         sessionStorage.setItem('sg_lead_id', data.leadId);
+        const newSubmissionId = crypto.randomUUID();
+        sessionStorage.setItem('sg_active_submission_id', newSubmissionId);
         setFormData(prev => ({
           ...prev,
-          submissionKey: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
+          submissionKey: newSubmissionId
         }));
 
         const baseUrl = "https://zcal.co/danielortizceo/10min";
@@ -127,7 +134,16 @@ export default function MicroIntakePage() {
 
           <div className="p-6 bg-stone/20">
             <div className="space-y-4">
-
+              <input
+                type="text"
+                name="honeypot"
+                id="honeypot"
+                value={formData.honeypot || ''}
+                onChange={(e) => updateForm('honeypot', e.target.value)}
+                style={{ position: 'absolute', left: '-9999px' }}
+                aria-hidden="true"
+                tabIndex={-1}
+              />
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="fullName" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Full Name *</label>
