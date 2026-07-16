@@ -4,8 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const schema = z.object({
   submissionId: z.string().uuid(),
-  firstName: z.string().trim().max(100),
-  lastName: z.string().trim().max(100).optional().default(''),
+  fullName: z.string().trim().max(200),
   email: z.string().trim().toLowerCase().email().max(254),
   businessName: z.string().trim().max(200).optional().default(''),
   website: z.union([z.string().trim().url().max(500), z.string().trim().max(0)]).optional(),
@@ -44,31 +43,39 @@ export default async function handler(req: any, res: any) {
 
   const origin = req.headers.origin;
   const allowedOriginsStr = process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS || '';
-  const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim()).filter(Boolean);
+  const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
 
-  if (allowedOrigins.length > 0 && origin && !allowedOrigins.includes(origin)) {
+  if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
+     return res.status(500).json({ ok: false, error: { code: 'SERVER_CONFIGURATION_ERROR', message: 'Server configuration error' } });
+  }
+
+  if (!origin || !allowedOrigins.includes(origin.replace(/\/$/, ''))) {
      return res.status(403).json({ ok: false, error: { code: 'FORBIDDEN', message: 'Origin not allowed' } });
   }
 
-  if (JSON.stringify(req.body).length > 10000) {
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+  if (contentLength > 10240 || (req.body && JSON.stringify(req.body).length > 10240)) {
      return res.status(413).json({ ok: false, error: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload too large' } });
   }
 
   let parsed;
   try {
-    parsed = schema.parse(req.body);
+    parsed = schema.strict().parse(req.body);
   } catch (err: any) {
     return res.status(400).json({ ok: false, error: { code: 'VALIDATION_FAILED', message: err.message } });
   }
 
   if (parsed.honeypot && parsed.honeypot.length > 0) {
-    // Silently reject honeypot
-    return res.status(200).json({ ok: true, leadId: uuidv4(), duplicate: false });
+    return res.status(400).json({ ok: false, error: { code: 'VALIDATION_FAILED', message: 'Invalid submission' } });
   }
 
   const {
-    submissionId, firstName, lastName, email, businessName, website, mainChallenge, attribution, formStartedAt
+    submissionId, fullName, email, businessName, website, mainChallenge, attribution, formStartedAt
   } = parsed;
+
+  const nameParts = fullName.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ');
 
   const emailAuth = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   let privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '';
@@ -103,7 +110,7 @@ export default async function handler(req: any, res: any) {
       'Intake Status', 'Booking Status', 'Call Prep Status', 'Follow-Up Status'
     ];
 
-    const range = `${tabName}!A1:T`;
+    const range = `'${tabName}'!A1:T`;
     const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: range,
@@ -116,7 +123,7 @@ export default async function handler(req: any, res: any) {
       // Initialize headers
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `${tabName}!A1`,
+        range: `'${tabName}'!A1`,
         valueInputOption: 'RAW',
         requestBody: { values: [expectedHeaders] }
       });
@@ -172,7 +179,7 @@ export default async function handler(req: any, res: any) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${tabName}!A1`,
+      range: `'${tabName}'!A1`,
       valueInputOption: 'RAW',
       requestBody: { values: [appendRow] }
     });

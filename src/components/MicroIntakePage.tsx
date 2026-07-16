@@ -57,14 +57,9 @@ export default function MicroIntakePage() {
     setLoading(true);
     setSubmitError(null);
 
-    const nameParts = formData.fullName.trim().split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ');
-
     const payload = {
       submissionId: formData.submissionKey,
-      firstName,
-      lastName,
+      fullName: formData.fullName.trim(),
       email: formData.email.trim(),
       businessName: formData.businessName?.trim() || '',
       website: formData.websiteUrl?.trim() || '',
@@ -97,10 +92,7 @@ export default function MicroIntakePage() {
         }));
 
         const baseUrl = "https://zcal.co/danielortizceo/10min";
-        const params = new URLSearchParams();
-        if (formData.fullName) params.append("name", formData.fullName.trim());
-
-        window.location.href = `${baseUrl}?${params.toString()}`;
+        window.location.href = baseUrl;
       } else {
         setLoading(false);
         setSubmitError("Failed to persist lead: " + (data.error?.message || "Please try again."));
