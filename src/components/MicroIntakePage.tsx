@@ -25,6 +25,7 @@ export default function MicroIntakePage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,32 +46,75 @@ export default function MicroIntakePage() {
   };
 
   const isFormValid = () => {
-    return formData.fullName.trim() !== "" && 
-           formData.email.trim().includes('@') && 
+    return formData.fullName.trim() !== "" &&
+           formData.email.trim().includes('@') &&
            formData.mainGrowthChallenge.trim() !== "";
   };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!isFormValid() || loading) return;
-    
+
     setLoading(true);
-    
-    // Simulate slight processing delay without logging raw PII or implying submission
-    setTimeout(() => {
+    setSubmitError(null);
+
+    const nameParts = formData.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ');
+
+    const payload = {
+      submissionId: formData.submissionKey,
+      firstName,
+      lastName,
+      email: formData.email.trim(),
+      businessName: formData.businessName?.trim() || '',
+      website: formData.websiteUrl?.trim() || '',
+      mainChallenge: formData.mainGrowthChallenge,
+      formStartedAt: formData.clientStartedAt,
+      attribution: {
+        source: formData.utmSource,
+        medium: formData.utmMedium,
+        campaign: formData.utmCampaign,
+        content: formData.utmContent,
+        term: formData.utmTerm,
+        referrer: formData.referrer,
+        landingPage: formData.landingPath
+      }
+    };
+
+    try {
+      const res = await fetch('/api/leads/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        sessionStorage.setItem('sg_lead_id', data.leadId);
+        setFormData(prev => ({
+          ...prev,
+          submissionKey: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
+        }));
+
+        const baseUrl = "https://zcal.co/danielortizceo/10min";
+        const params = new URLSearchParams();
+        if (formData.fullName) params.append("name", formData.fullName.trim());
+
+        window.location.href = `${baseUrl}?${params.toString()}`;
+      } else {
+        setLoading(false);
+        setSubmitError("Failed to persist lead: " + (data.error?.message || "Please try again."));
+      }
+    } catch (err) {
       setLoading(false);
-      const baseUrl = "https://zcal.co/danielortizceo/10min";
-      const params = new URLSearchParams();
-      if (formData.fullName) params.append("name", formData.fullName.trim());
-      if (formData.email) params.append("email", formData.email.trim());
-      
-      window.location.href = `${baseUrl}?${params.toString()}`;
-    }, 400);
+      setSubmitError("Network error. Please try submitting again.");
+    }
   };
 
   return (
     <main className="pt-28 pb-16 relative min-h-screen grid-bg bg-stone flex flex-col justify-center">
       <div className="absolute inset-0 bg-stone/90"></div>
-      
+
       <div className="max-w-[800px] mx-auto px-6 relative z-10 w-full">
         <div className="text-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 uppercase">Tell Me What’s Holding Your Growth Back</h1>
@@ -88,14 +132,15 @@ export default function MicroIntakePage() {
             </div>
             <span className="ml-2 text-accent">Strategy Call Intake</span>
           </div>
-          
+
           <div className="p-6 bg-stone/20">
             <div className="space-y-4">
-              
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Full Name *</label>
-                  <input 
+                  <label htmlFor="fullName" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Full Name *</label>
+                  <input
+                    id="fullName"
                     type="text"
                     value={formData.fullName}
                     onChange={(e) => updateForm('fullName', e.target.value)}
@@ -104,8 +149,9 @@ export default function MicroIntakePage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Email *</label>
-                  <input 
+                  <label htmlFor="email" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Email *</label>
+                  <input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => updateForm('email', e.target.value)}
@@ -117,8 +163,9 @@ export default function MicroIntakePage() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Name (Optional)</label>
-                  <input 
+                  <label htmlFor="businessName" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Business Name (Optional)</label>
+                  <input
+                    id="businessName"
                     type="text"
                     value={formData.businessName || ''}
                     onChange={(e) => updateForm('businessName', e.target.value)}
@@ -127,8 +174,9 @@ export default function MicroIntakePage() {
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Website (Optional)</label>
-                  <input 
+                  <label htmlFor="websiteUrl" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Website (Optional)</label>
+                  <input
+                    id="websiteUrl"
                     type="url"
                     value={formData.websiteUrl || ''}
                     onChange={(e) => updateForm('websiteUrl', e.target.value)}
@@ -139,8 +187,9 @@ export default function MicroIntakePage() {
               </div>
 
               <div>
-                <label className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Main Growth Challenge *</label>
-                <textarea 
+                <label htmlFor="mainGrowthChallenge" className="block font-mono text-[9px] uppercase text-paper/50 mb-1.5">Main Growth Challenge *</label>
+                <textarea
+                  id="mainGrowthChallenge"
                   value={formData.mainGrowthChallenge}
                   onChange={(e) => updateForm('mainGrowthChallenge', e.target.value)}
                   placeholder="What is the biggest growth problem you want help solving?"
@@ -150,12 +199,17 @@ export default function MicroIntakePage() {
               </div>
 
               <div className="pt-1">
-                <button 
+                {submitError && (
+                  <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[10px] font-mono text-center">
+                    {submitError}
+                  </div>
+                )}
+                <button
                   disabled={!isFormValid() || loading}
                   onClick={handleBooking}
                   className="w-full bg-accent text-stone py-3 font-mono uppercase tracking-widest font-bold text-xs hover:bg-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
                 >
-                  <Terminal className="w-4 h-4" /> 
+                  <Terminal className="w-4 h-4" />
                   {loading ? 'Processing...' : 'See Available Times'}
                 </button>
               </div>
