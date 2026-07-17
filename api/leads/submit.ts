@@ -128,16 +128,16 @@ export default async function handler(req: any, res: any) {
     const rows = readRes.data.values || [];
     let headerRow = rows[0];
 
-    let nextRow = 1;
+    let expectedDataRow = 2;
     if (!headerRow || headerRow.length === 0) {
       // Initialize headers
-      await sheets.spreadsheets.values.update({
+      await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
         range: getRange(tabName, 'A1'),
         valueInputOption: 'RAW',
         requestBody: { values: [expectedHeaders] }
       });
-      nextRow = 2;
+      expectedDataRow = 2;
     } else {
       // Verify headers
       for (let i = 0; i < expectedHeaders.length; i++) {
@@ -146,10 +146,9 @@ export default async function handler(req: any, res: any) {
           return res.status(500).json({ ok: false, error: { code: 'SERVER_CONFIGURATION_ERROR', message: 'Server configuration error' } });
         }
       }
-      nextRow = rows.length + 1;
+      expectedDataRow = rows.length + 1;
       
       // Check idempotency (duplicate submissionId)
-      // We check rows 1..N for matching submissionId in Column B (index 1)
       for (let i = 1; i < rows.length; i++) {
         if (rows[i][1] === submissionId) {
           const existingLeadId = rows[i][0];
@@ -189,12 +188,34 @@ export default async function handler(req: any, res: any) {
       followUpStatus
     ];
 
-    await sheets.spreadsheets.values.update({
+    const appendReq = await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: getRange(tabName, `A${nextRow}`),
+      range: getRange(tabName, 'A1'),
       valueInputOption: 'RAW',
       requestBody: { values: [appendRow] }
     });
+    
+    // Extract the row number that Google Sheets actually appended to
+    const updatedRange = appendReq.data?.updates?.updatedRange || '';
+    const match = updatedRange.match(/!A(\d+):/);
+    if (!match) {
+      console.error("Could not parse updatedRange to verify write.");
+      return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
+    }
+    
+    const writtenRow = parseInt(match[1], 10);
+    
+    // Read-after-write verification
+    const verifyRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: getRange(tabName, `A${writtenRow}:B${writtenRow}`)
+    });
+    
+    const verifyRow = verifyRes.data.values && verifyRes.data.values[0];
+    if (!verifyRow || verifyRow[0] !== leadId || verifyRow[1] !== submissionId) {
+      console.error(`Read-after-write verification failed at row ${writtenRow}.`);
+      return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
+    }
 
     return res.status(200).json({ ok: true, leadId, duplicate: false });
 
