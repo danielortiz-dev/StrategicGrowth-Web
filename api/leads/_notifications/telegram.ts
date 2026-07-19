@@ -1,5 +1,5 @@
-import { LeadData, NotificationAdapter } from './types';
-import { NotificationEventStore } from './store';
+import { LeadData, NotificationAdapter } from './types.js';
+import { NotificationEventStore } from './store.js';
 
 export class TelegramNotificationAdapter implements NotificationAdapter {
   async send(lead: LeadData, submissionId: string, store: NotificationEventStore): Promise<void> {

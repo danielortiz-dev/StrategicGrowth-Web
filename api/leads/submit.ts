@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { google } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
-import { LeadNotificationRouter } from './_notifications/router';
+import { LeadNotificationRouter } from './_notifications/router.js';
 const schema = z.object({
   submissionId: z.string().uuid(),
   fullName: z.string().trim().min(1).max(200),

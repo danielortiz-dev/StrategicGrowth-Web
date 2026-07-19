@@ -1,7 +1,7 @@
-import { TelegramNotificationAdapter } from './telegram';
-import { EmailNotificationAdapter } from './email';
-import { NotificationEventStore } from './store';
-import { LeadData } from './types';
+import { TelegramNotificationAdapter } from './telegram.js';
+import { EmailNotificationAdapter } from './email.js';
+import { NotificationEventStore } from './store.js';
+import { LeadData } from './types.js';
 import { waitUntil } from '@vercel/functions';
 
 export class LeadNotificationRouter {

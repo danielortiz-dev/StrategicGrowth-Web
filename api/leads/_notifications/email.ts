@@ -1,5 +1,5 @@
-import { LeadData, NotificationAdapter } from './types';
-import { NotificationEventStore } from './store';
+import { LeadData, NotificationAdapter } from './types.js';
+import { NotificationEventStore } from './store.js';
 import * as crypto from 'crypto';
 
 export class EmailNotificationAdapter implements NotificationAdapter {
