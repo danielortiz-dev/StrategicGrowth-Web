@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TelegramNotificationAdapter } from '../api/leads/notifications/telegram';
-import { EmailNotificationAdapter } from '../api/leads/notifications/email';
-import { LeadNotificationRouter } from '../api/leads/notifications/router';
-import { NotificationEventStore } from '../api/leads/notifications/store';
+import { TelegramNotificationAdapter } from '../api/leads/_notifications/telegram';
+import { EmailNotificationAdapter } from '../api/leads/_notifications/email';
+import { LeadNotificationRouter } from '../api/leads/_notifications/router';
+import { NotificationEventStore } from '../api/leads/_notifications/store';
 let waitUntilPromises: Promise<any>[] = [];
 
 vi.mock('@vercel/functions', () => ({
