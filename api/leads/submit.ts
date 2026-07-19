@@ -47,6 +47,7 @@ export default async function handler(req: any, res: any) {
 
   const origin = req.headers.origin;
   const allowedOriginsStr = process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS || '';
+  console.log({ origin, allowedOriginsStr, VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL });
   const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
 
   if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
