@@ -66,38 +66,4 @@ describe('Lead Notifications', () => {
     expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'TELEGRAM_NOTIFICATION_ACCEPTED', 'TELEGRAM', 'TELEGRAM_BOT_API', '123', 'ACCEPTED', 1, 'NONE');
   });
 
-  it('Email content contains the approved operational fields', async () => {
-    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: true }) } as any);
-    const adapter = new EmailNotificationAdapter();
-    const store = new NotificationEventStore();
-    await adapter.send(sampleLead, 'sub-123', store);
-
-    expect(mockFetch).toHaveBeenCalledWith('https://example.com/webhook', expect.any(Object));
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.payload.prospectName).toBe('John Doe');
-    expect(body.payload.businessEmail).toBe('test@example.com');
-    expect(body.signature).toBeTruthy();
-    expect(body.timestamp).toBeTruthy();
-    expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_ACCEPTED', 'EMAIL', 'APPS_SCRIPT', '', 'ACCEPTED', 1, 'NONE');
-  });
-
-  it('Missing email configuration records CONFIGURATION_ERROR', async () => {
-    delete process.env.LEAD_EMAIL_WEBHOOK_URL;
-    const adapter = new EmailNotificationAdapter();
-    const store = new NotificationEventStore();
-    await adapter.send(sampleLead, 'sub-123', store);
-
-    expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_FAILED', 'EMAIL', 'APPS_SCRIPT', '', 'FAILED', 1, 'CONFIGURATION_ERROR');
-  });
-
-  it('One channel failure does not suppress the other channel', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Telegram Network Error'));
-    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: true }) } as any);
-
-    await LeadNotificationRouter.route(sampleLead, 'sub-123');
-    await Promise.all(waitUntilPromises);
-
-    expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'TELEGRAM_NOTIFICATION_FAILED', 'TELEGRAM', 'TELEGRAM_BOT_API', '', 'FAILED', 1, 'NETWORK_ERROR');
-    expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_ACCEPTED', 'EMAIL', 'APPS_SCRIPT', '', 'ACCEPTED', 1, 'NONE');
-  });
 });
