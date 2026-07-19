@@ -217,6 +217,24 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
     }
 
+    const leadData = {
+      leadId,
+      prospectName: fullName,
+      businessName: businessName || '',
+      businessEmail: email,
+      website: website || '',
+      primaryChallenge: mainChallenge,
+      sourceSummary: attribution?.source || '',
+      landingPage: attribution?.landingPage || '',
+      bookingStatus,
+      followUpStatus,
+      responseTarget: 'Review within 2 business hours',
+      privateLedgerLink: `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=0`
+    };
+
+    const { LeadNotificationRouter } = await import('./notifications/router');
+    await LeadNotificationRouter.route(leadData, submissionId);
+
     return res.status(200).json({ ok: true, leadId, duplicate: false });
 
   } catch (err: any) {
