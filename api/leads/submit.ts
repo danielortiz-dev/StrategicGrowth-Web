@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { google } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
-
+import { LeadNotificationRouter } from './notifications/router';
 const schema = z.object({
   submissionId: z.string().uuid(),
   fullName: z.string().trim().min(1).max(200),
@@ -233,7 +233,6 @@ export default async function handler(req: any, res: any) {
       privateLedgerLink: `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=0`
     };
 
-    const { LeadNotificationRouter } = await import('./notifications/router');
     await LeadNotificationRouter.route(leadData, submissionId);
 
     return res.status(200).json({ ok: true, leadId, duplicate: false });
