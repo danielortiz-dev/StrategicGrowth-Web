@@ -68,7 +68,7 @@ function doPost(e) {
 
     if (
       typeof timestamp !== 'number' ||
-      !isFinite(timestamp) ||
+      !Number.isInteger(timestamp) ||
       typeof signature !== 'string' ||
       signature.length !== 64 ||
       typeof payload !== 'object' ||
@@ -121,7 +121,15 @@ function doPost(e) {
     }
 
     // Place a PROCESSING replay marker before sending
-    cache.put(replayKey, 'PROCESSING', 600);
+    try {
+      cache.put(replayKey, 'PROCESSING', 600);
+      // Double check that it wrote successfully to prevent sending if cache is failing
+      if (cache.get(replayKey) !== 'PROCESSING') {
+        throw new Error('Cache write failed');
+      }
+    } catch (cacheErr) {
+      return respond({ ok: false, error: 'REPLAY_GUARD_UNAVAILABLE' });
+    }
 
     // 4. Dispatch Email
     const emailSubject = 'New Strategy Call Lead: ' + payload.prospectName;
@@ -141,11 +149,15 @@ function doPost(e) {
         subject: emailSubject,
         body: emailBody
       });
+    } catch (mailErr) {
+      return respond({ ok: false, error: 'EMAIL_SEND_UNCERTAIN' });
+    }
+
+    try {
       // Replace marker with SENT after successful send
       cache.put(replayKey, 'SENT', 600);
-    } catch (mailErr) {
-      cache.remove(replayKey);
-      return respond({ ok: false, error: 'EMAIL_SEND_FAILED' });
+    } catch (cacheErr) {
+      return respond({ ok: true, leadId: payload.leadId, warning: 'REPLAY_MARKER_REFRESH_FAILED' });
     }
 
     return respond({ ok: true, leadId: payload.leadId });

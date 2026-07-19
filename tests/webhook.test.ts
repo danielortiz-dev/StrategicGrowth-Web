@@ -60,6 +60,8 @@ async function simulateAppsScriptWebhook(
   cacheStore: Map<string, string>,
   lock: MockLock,
   failMail = false,
+  failCacheProcessing = false,
+  failCacheSent = false,
   pauseBeforeMail = 0
 ) {
   let locked = false;
@@ -72,7 +74,7 @@ async function simulateAppsScriptWebhook(
 
     if (
       typeof timestamp !== 'number' ||
-      !isFinite(timestamp) ||
+      !Number.isInteger(timestamp) ||
       typeof signature !== 'string' ||
       signature.length !== 64 ||
       typeof payload !== 'object' ||
@@ -111,18 +113,36 @@ async function simulateAppsScriptWebhook(
       return { ok: false, error: 'REPLAY_REJECTED' };
     }
 
-    cacheStore.set(replayKey, 'PROCESSING');
+    try {
+      cacheStore.set(replayKey, 'PROCESSING');
+      if (failCacheProcessing || cacheStore.get(replayKey) !== 'PROCESSING') {
+        throw new Error('Cache write failed');
+      }
+    } catch (cacheErr) {
+      return { ok: false, error: 'REPLAY_GUARD_UNAVAILABLE' };
+    }
 
     if (pauseBeforeMail > 0) {
       await new Promise(r => setTimeout(r, pauseBeforeMail));
     }
 
-    if (failMail) {
-      cacheStore.delete(replayKey);
-      return { ok: false, error: 'EMAIL_SEND_FAILED' };
+    try {
+      if (failMail) {
+        throw new Error('Mail API failed');
+      }
+    } catch (mailErr) {
+      return { ok: false, error: 'EMAIL_SEND_UNCERTAIN' };
     }
 
-    cacheStore.set(replayKey, 'SENT');
+    try {
+      if (failCacheSent) {
+        throw new Error('Cache update failed');
+      }
+      cacheStore.set(replayKey, 'SENT');
+    } catch (cacheErr) {
+      return { ok: true, leadId: payload.leadId, warning: 'REPLAY_MARKER_REFRESH_FAILED' };
+    }
+
     return { ok: true, leadId: payload.leadId };
   } catch (e) {
     return { ok: false, error: 'INTERNAL_SERVER_ERROR' };
@@ -245,8 +265,8 @@ describe('Apps Script Webhook Verifier Contract', () => {
     const req = createValidReq(payload);
 
     // Fire two concurrently
-    const p1 = simulateAppsScriptWebhook(req, secret, cache, activeLock, false, 50);
-    const p2 = simulateAppsScriptWebhook(req, secret, cache, activeLock, false, 50);
+    const p1 = simulateAppsScriptWebhook(req, secret, cache, activeLock, false, false, false, 50);
+    const p2 = simulateAppsScriptWebhook(req, secret, cache, activeLock, false, false, false, 50);
 
     const [res1, res2] = await Promise.all([p1, p2]);
     const successes = [res1, res2].filter(r => r.ok).length;
@@ -276,15 +296,65 @@ describe('Apps Script Webhook Verifier Contract', () => {
 
   it('15. Failed MailApp send does not falsely report success', async () => {
     const req = createValidReq(payload);
-    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock, true); // failMail = true
+    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock, true, false, false); // failMail = true
     expect(res.ok).toBe(false);
-    expect(res.error).toBe('EMAIL_SEND_FAILED');
+    expect(res.error).toBe('EMAIL_SEND_UNCERTAIN');
 
     const replayKey = 'replay_' + crypto.createHash('sha256').update(req.signature).digest('hex');
-    expect(cache.has(replayKey)).toBe(false); // Marker removed
+    expect(cache.get(replayKey)).toBe('PROCESSING'); // Marker retained
   });
 
-  it('Source contract test proves canonical file uses LockService', () => {
+  it('16. Floating timestamp is rejected', async () => {
+    const req = createValidReq(payload);
+    req.timestamp += 0.5;
+    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock);
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('MALFORMED_REQUEST');
+  });
+
+  it('17. Numeric-string timestamp is rejected', async () => {
+    const req = createValidReq(payload);
+    (req as any).timestamp = req.timestamp.toString();
+    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock);
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('MALFORMED_REQUEST');
+  });
+
+  it('18. PROCESSING write failure blocks MailApp', async () => {
+    const req = createValidReq(payload);
+    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock, false, true, false); // failCacheProcessing = true
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('REPLAY_GUARD_UNAVAILABLE');
+  });
+
+  it('19. MailApp success and SENT refresh failure', async () => {
+    const req = createValidReq(payload);
+    const res = await simulateAppsScriptWebhook(req, secret, cache, activeLock, false, false, true); // failCacheSent = true
+    expect(res.ok).toBe(true);
+    expect(res.warning).toBe('REPLAY_MARKER_REFRESH_FAILED');
+  });
+
+  it('20. Immediate replay after uncertainty', async () => {
+    const req = createValidReq(payload);
+    await simulateAppsScriptWebhook(req, secret, cache, activeLock, true, false, false); // failMail = true
+
+    // Retry immediately
+    const res2 = await simulateAppsScriptWebhook(req, secret, cache, activeLock);
+    expect(res2.ok).toBe(false);
+    expect(res2.error).toBe('REPLAY_REJECTED'); // Because PROCESSING is still active
+  });
+
+  it('21. Immediate replay after marker-refresh warning', async () => {
+    const req = createValidReq(payload);
+    await simulateAppsScriptWebhook(req, secret, cache, activeLock, false, false, true); // failCacheSent = true
+
+    // Retry immediately
+    const res2 = await simulateAppsScriptWebhook(req, secret, cache, activeLock);
+    expect(res2.ok).toBe(false);
+    expect(res2.error).toBe('REPLAY_REJECTED'); // Because PROCESSING is still active
+  });
+
+  it('Source contract test proves canonical file uses LockService and no cache.remove after MailApp', () => {
     const fs = require('fs');
     const path = require('path');
     const source = fs.readFileSync(path.resolve(__dirname, '../infrastructure/apps-script/lead-email-notification-webhook.gs'), 'utf-8');
@@ -294,6 +364,8 @@ describe('Apps Script Webhook Verifier Contract', () => {
     expect(source).toContain('cache.get(replayKey)');
     expect(source).toContain('cache.put(replayKey, \'PROCESSING\'');
     expect(source).not.toContain('statusCode, data');
+    // Ensure cache.remove is nowhere near the MailApp execution logic
+    expect(source.indexOf('cache.remove')).toBe(-1);
   });
 });
 
@@ -328,23 +400,26 @@ describe('Lead Notifications Email Adapter Integration', () => {
     expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_FAILED', 'EMAIL', 'APPS_SCRIPT', '', 'FAILED', 1, 'CONFIGURATION_ERROR');
   });
 
-  it('17. EmailNotificationAdapter uses JSON data.ok as authoritative', async () => {
-    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: true }) } as any);
+  it('17. EmailNotificationAdapter uses JSON data.ok as authoritative and accepts warning', async () => {
+    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: true, warning: 'REPLAY_MARKER_REFRESH_FAILED' }) } as any);
     const adapter = new EmailNotificationAdapter();
     const store = new NotificationEventStore();
     await adapter.send(sampleLead, 'sub-123', store);
 
     expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_ACCEPTED', 'EMAIL', 'APPS_SCRIPT', '', 'ACCEPTED', 1, 'NONE');
+    // Ensure no automatic retry is introduced by checking fetch was called only once
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
-  it('18. EmailNotificationAdapter records API_ERROR when endpoint returns {ok: false}', async () => {
+  it('18. EmailNotificationAdapter records API_ERROR when endpoint returns {ok: false} even for EMAIL_SEND_UNCERTAIN', async () => {
     // Even if transport is 200, if ok is false it is an API_ERROR
-    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: false, error: 'INVALID_SIGNATURE' }) } as any);
+    mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: false, error: 'EMAIL_SEND_UNCERTAIN' }), status: 200 } as any);
     const adapter = new EmailNotificationAdapter();
     const store = new NotificationEventStore();
     await adapter.send(sampleLead, 'sub-123', store);
 
     expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_FAILED', 'EMAIL', 'APPS_SCRIPT', '', 'FAILED', 1, 'API_ERROR');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('19. Telegram failure does not suppress email', async () => {
