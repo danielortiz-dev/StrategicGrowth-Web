@@ -50,6 +50,11 @@ export default async function handler(req: any, res: any) {
   console.log({ origin, allowedOriginsStr, VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL });
   const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
 
+  if (process.env.VERCEL_ENV === 'preview') {
+    if (process.env.VERCEL_URL) allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+    if (process.env.VERCEL_BRANCH_URL) allowedOrigins.push(`https://${process.env.VERCEL_BRANCH_URL}`);
+  }
+
   if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
      return res.status(500).json({ ok: false, error: { code: 'SERVER_CONFIGURATION_ERROR', message: 'Server configuration error' } });
   }
