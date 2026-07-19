@@ -237,7 +237,7 @@ export default function MicroIntakePage() {
               <div className="text-center pt-1">
                 <p className="text-[9px] font-sans text-paper/40 leading-relaxed max-w-md mx-auto">
                   By continuing, you agree that Strategic Growth may use the information provided to prepare for and follow up about your requested strategy call. Scheduling is handled through Zcal. No payment or service agreement is created.{' '}
-                  <Link to="/privacy" className="text-paper/60 hover:text-accent underline">View Privacy Policy</Link>.
+                  <a href="/privacy" className="text-paper/60 hover:text-accent underline">View Privacy Policy</a>.
                 </p>
               </div>
 
