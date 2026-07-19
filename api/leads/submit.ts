@@ -239,7 +239,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({ ok: true, leadId, duplicate: false });
 
   } catch (err: any) {
-    console.error("Google Sheets API error");
+    console.error("Google Sheets API error", err);
     return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
   }
 }
