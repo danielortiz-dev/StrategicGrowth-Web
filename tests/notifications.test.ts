@@ -81,6 +81,15 @@ describe('Lead Notifications', () => {
     expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_ACCEPTED', 'EMAIL', 'APPS_SCRIPT', '', 'ACCEPTED', 1, 'NONE');
   });
 
+  it('Missing email configuration records CONFIGURATION_ERROR', async () => {
+    delete process.env.LEAD_EMAIL_WEBHOOK_URL;
+    const adapter = new EmailNotificationAdapter();
+    const store = new NotificationEventStore();
+    await adapter.send(sampleLead, 'sub-123', store);
+
+    expect(mockRecordEvent).toHaveBeenCalledWith('test-lead-123', 'EMAIL_NOTIFICATION_FAILED', 'EMAIL', 'APPS_SCRIPT', '', 'FAILED', 1, 'CONFIGURATION_ERROR');
+  });
+
   it('One channel failure does not suppress the other channel', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Telegram Network Error'));
     mockFetch.mockResolvedValueOnce({ json: () => Promise.resolve({ ok: true }) } as any);
