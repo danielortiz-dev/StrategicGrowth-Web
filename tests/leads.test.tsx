@@ -145,6 +145,60 @@ describe('Server API Validation & Security', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
+  it('Production origins accepted when listed in allowlist', async () => {
+    process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS = 'https://strategicgrowthhq.vercel.app, https://strategicgrowthhq-theta.vercel.app';
+    process.env.VERCEL_ENV = 'production';
+
+    let req = getValidReq();
+    req.headers.origin = 'https://strategicgrowthhq.vercel.app';
+    let res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    req = getValidReq();
+    req.headers.origin = 'https://strategicgrowthhq-theta.vercel.app';
+    res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('Dynamic preview variables ignored in production mode', async () => {
+    process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS = 'https://strategicgrowthhq.vercel.app';
+    process.env.VERCEL_ENV = 'production';
+    process.env.VERCEL_URL = 'dynamic.vercel.app';
+    process.env.VERCEL_BRANCH_URL = 'branch.vercel.app';
+
+    let req = getValidReq();
+    req.headers.origin = 'https://dynamic.vercel.app';
+    let res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+
+    req = getValidReq();
+    req.headers.origin = 'https://branch.vercel.app';
+    res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('HTTP origin is rejected', async () => {
+    process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS = 'https://strategicgrowthhq.vercel.app';
+    const req = getValidReq();
+    req.headers.origin = 'http://strategicgrowthhq.vercel.app';
+    const res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('Hostname suffix attack is rejected', async () => {
+    process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS = 'https://strategicgrowthhq.vercel.app';
+    const req = getValidReq();
+    req.headers.origin = 'https://strategicgrowthhq.vercel.app.malicious.com';
+    const res = getRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
   it('invalid request makes no Google call', async () => {
     const req = getValidReq();
     delete (req.body as any).email;

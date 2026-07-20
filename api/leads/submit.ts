@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { google } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
-
+import { LeadNotificationRouter } from './_notifications/router.js';
 const schema = z.object({
   submissionId: z.string().uuid(),
   fullName: z.string().trim().min(1).max(200),
@@ -47,7 +47,13 @@ export default async function handler(req: any, res: any) {
 
   const origin = req.headers.origin;
   const allowedOriginsStr = process.env.LEAD_SUBMISSION_ALLOWED_ORIGINS || '';
+
   const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
+
+  if (process.env.VERCEL_ENV === 'preview') {
+    if (process.env.VERCEL_URL) allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+    if (process.env.VERCEL_BRANCH_URL) allowedOrigins.push(`https://${process.env.VERCEL_BRANCH_URL}`);
+  }
 
   if (allowedOrigins.length === 0 || allowedOrigins.includes('*')) {
      return res.status(500).json({ ok: false, error: { code: 'SERVER_CONFIGURATION_ERROR', message: 'Server configuration error' } });
@@ -217,10 +223,27 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
     }
 
+    const leadData = {
+      leadId,
+      prospectName: fullName,
+      businessName: businessName || '',
+      businessEmail: email,
+      website: website || '',
+      primaryChallenge: mainChallenge,
+      sourceSummary: attribution?.source || '',
+      landingPage: attribution?.landingPage || '',
+      bookingStatus,
+      followUpStatus,
+      responseTarget: 'Review within 2 business hours',
+      privateLedgerLink: `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=0`
+    };
+
+    await LeadNotificationRouter.route(leadData, submissionId);
+
     return res.status(200).json({ ok: true, leadId, duplicate: false });
 
   } catch (err: any) {
-    console.error("Google Sheets API error");
+    console.error("Google Sheets API error", err);
     return res.status(500).json({ ok: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' } });
   }
 }
