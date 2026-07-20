@@ -31,7 +31,7 @@ export class NotificationEventStore {
         requestBody: { values: [row] }
       });
     } catch (err) {
-      console.error("Failed to write to Lead Events", err);
+      console.error("Failed to write to Lead Events");
     }
   }
 }
